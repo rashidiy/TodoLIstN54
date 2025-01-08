@@ -3,3 +3,6 @@
 **/migrations/**
 !**/migrations/__init__.py
 .env
+db.sqlite3
+**/__pycache__/**
+.venv
