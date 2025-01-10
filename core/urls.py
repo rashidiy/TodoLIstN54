@@ -17,7 +17,7 @@ Including another URLconf
 # from django.contrib import admin
 from django.urls import path
 
-from todo.views import TodoListView, TodoCreate, TodoConfirm,  TodoDelete
+from todo.views import TodoListView, TodoCreate, TodoConfirm, TodoDelete, LoginView, RegisterView
 
 urlpatterns = [
     #    path('admin/', admin.site.urls),
@@ -25,5 +25,7 @@ urlpatterns = [
     path('todo/create/', TodoCreate.as_view()),
     path('todo/confirm/', TodoConfirm.as_view()),
     path('todo/delete/', TodoDelete.as_view()),
+    path('auth/login/', LoginView.as_view(), name='login'),
+    path('auth/register/', RegisterView.as_view(), name='register'),
 
 ]

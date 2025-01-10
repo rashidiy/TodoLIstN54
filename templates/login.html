@@ -1,0 +1,33 @@
+{% extends 'auth_base.html' %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <nav class="auth-nav">
+        <a href="{% url 'login' %}" class="active">Login</a>
+        <a href="{% url 'register' %}">Register</a>
+    </nav>
+    
+    <form method="post" action="{% url 'login' %}">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="username">Username or Email</label>
+            <input type="text" id="username" name="username" required>
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        {% if error %}
+        <div class="error-message">{{ error }}</div>
+        {% endif %}
+        <button type="submit" class="auth-button">Login</button>
+    </form>
+    
+    <div class="auth-links">
+        <a href="{% url 'register' %}">Don't have an account? Register</a>
+    </div>
+</div>
+{% endblock %}
+
