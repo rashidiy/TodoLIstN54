@@ -395,9 +395,18 @@
 <body>
 <div class="container">
     <div class="auth-buttons">
-        <a href="{% url 'login' %}" class="active">
-            Log In
-        </a>
+        {% if user.is_authenticated %}
+            <form action="{% url 'logout' %}" method="post">
+                {% csrf_token %}
+                <button type="submit">Log Out</button>
+            </form>
+
+        {% else %}
+
+            <a href="{% url 'login' %}" class="active">
+                Log In
+            </a>
+        {% endif %}
     </div>
     <h1>TODO</h1>
     <form id="todo-form">

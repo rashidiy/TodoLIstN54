@@ -1,11 +1,10 @@
 import json
 
-from django.contrib.admin import action
 from django.core.handlers.wsgi import WSGIRequest
 from django.http import JsonResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
-from django.views.generic import ListView, View, TemplateView
+from django.views.generic import ListView, View
 
 from todo.models import Todo
 
@@ -13,14 +12,6 @@ from todo.models import Todo
 class TodoListView(ListView):
     queryset = Todo.objects.all()
     template_name = 'index.html'
-
-
-class LoginView(TemplateView):
-    template_name = 'login.html'
-
-
-class RegisterView(TemplateView):
-    template_name = 'register.html'
 
 
 class CustomView(View):

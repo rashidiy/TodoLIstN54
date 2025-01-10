@@ -14,10 +14,10 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-# from django.contrib import admin
+from django.contrib.auth.views import LogoutView
 from django.urls import path
 
-from todo.views import TodoListView, TodoCreate, TodoConfirm, TodoDelete, LoginView, RegisterView
+from todo.views import TodoListView, TodoCreate, TodoConfirm, TodoDelete, ToDoLoginView, ToDoRegisterView
 
 urlpatterns = [
     #    path('admin/', admin.site.urls),
@@ -25,7 +25,7 @@ urlpatterns = [
     path('todo/create/', TodoCreate.as_view()),
     path('todo/confirm/', TodoConfirm.as_view()),
     path('todo/delete/', TodoDelete.as_view()),
-    path('auth/login/', LoginView.as_view(), name='login'),
-    path('auth/register/', RegisterView.as_view(), name='register'),
-
+    path('auth/login/', ToDoLoginView.as_view(), name='login'),
+    path('auth/register/', ToDoRegisterView.as_view(), name='register'),
+    path('auth/logout/', LogoutView.as_view(), name='logout'),
 ]
