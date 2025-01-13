@@ -462,7 +462,7 @@
                 const title = todoInput.value.trim();
                 if (title) {
                     try {
-                        const response = await fetch('/todo/create/', {
+                        const response = await fetch('http://127.0.0.1:8000/todo/create/', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -475,6 +475,7 @@
                             todoList.appendChild(li);
                             todoInput.value = '';
                             showToast('Todo added successfully');
+                            window.location.reload();
                         } else {
                             showToast('Failed to add todo');
                         }
@@ -508,7 +509,7 @@
                 const todoItem = e.target.closest('.todo-item');
                 const id = todoItem.dataset.id;
                 try {
-                    const response = await fetch('/todo/confirm/', {
+                    const response = await fetch('http://127.0.0.1:8000/todo/confirm/', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -519,6 +520,7 @@
                     if (data.status === 'success') {
                         todoItem.classList.toggle('completed');
                         showToast('Todo status updated');
+                        window.location.reload();
                     } else {
                         showToast('Failed to update todo status');
                         // Revert the checkbox state if the update failed
@@ -547,6 +549,7 @@
                     if (data.status === 'success') {
                         todoItem.remove();
                         showToast('Todo deleted successfully');
+                        window.location.reload();
                     } else {
                         showToast('Failed to delete todo');
                     }
