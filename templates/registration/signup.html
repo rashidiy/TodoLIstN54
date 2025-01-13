@@ -1,68 +1,48 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Login/Signup Form</title>
-        <link rel="stylesheet" href="{% static 'css/registration.css' %}">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-        <style>
-            .invalid-feedback {
-                color: #dc3545 !important;
-                font-size: 12px !important;
-                margin-top: -10px !important; /* Pull it up closer to the input */
-                margin-bottom: 10px !important;
-                display: block !important;
-                padding-left: 2px !important;
-}
+{% extends 'registration/auth_base.html' %}
 
-        </style>
-    </head>
-    <body>
+{% block title %}Register{% endblock %}
 
-    <a href="{% url 'home' %}"><button class="back-btn">
-            <i class="fas fa-arrow-left"></i>
-            Back
-        </button></a>
+{% block content %}
+<div class="auth-container">
+    <nav class="auth-nav">
+        <a href="{% url 'login' %}">Login</a>
+        <a href="{% url 'signup' %}" class="active">Register</a>
+    </nav>
 
-        <div class="container">
-            <!-- Login Form -->
-            {% block content %}
-            	
-            {% endblock %}
-
-            <!-- Signup Form -->
-            <div class="form-container hidden" id="signupForm">
-                <h2>Signup Form</h2>
-                <div class="toggle-buttons">
-                    <button type="button" onclick="toggleForm('login')">Login</button>
-                    <button type="button" class="active" onclick="toggleForm('signup')">Signup</button>
-                </div>
-                <form method="post">{% csrf_token %}
-                    <input type="email" name="email"  id="id_email" placeholder="Email Address" required>
-                    {% if register_form.email.errors%}
-                            <div class="invalid-feedback">
-                                {{ register_form.email.errors.0 }}
-                            </div>
-                    {% endif %}
-                    <input type="password" name="password1" id="id_password1" placeholder="Password" required>
-                    {% if register_form.password1.errors %}
-                            <div class="invalid-feedback">
-                                {{ register_form.password1.errors.0 }}
-                            </div>
-                    {% endif %} 
-                    <input type="password" name='password2' id="id_password2" placeholder="Confirm password" required>
-                    {% if register_form.password2.errors %}
-                            <div class="invalid-feedback">
-                                {{ register_form.password2.errors.0 }}
-                            </div>
-                    {% endif %}
-                    <button type="submit" class="submit-btn" name="register" >Signup</button>
-                </form>
-            </div>
-
+    <form method="post" action="{% url 'signup' %}">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" value="{{ form.instance.email }}">
+            {{ form.errors.email }}
         </div>
-        <script src="{% static 'js/registration.js' %}"></script>
-    </body>
-</html>
+        <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" value="{{ form.instance.username }}" required>
+            {{ form.errors.username }}
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password1" required>
+            {{ form.errors.password1 }}
+        </div>
+        <div class="form-group">
+            <label for="confirm_password">Confirm Password</label>
+            <input type="password" id="confirm_password" name="password2" required>
+            {{ form.errors.password2 }}
+        </div>
+        {% if error %}
+        <div class="error-message">{{ error }}</div>
+        {% endif %}
+        {% if success %}
+        <div class="success-message">{{ success }}</div>
+        {% endif %}
+        <button type="submit" class="auth-button">Register</button>
+    </form>
+
+    <div class="auth-links">
+        <a href="{% url 'login' %}">Already have an account? Login</a>
+        <a href="{% url 'home' %}">Or Back</a>
+    </div>
+</div>
+{% endblock %}
