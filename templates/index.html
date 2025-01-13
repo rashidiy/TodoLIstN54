@@ -373,6 +373,7 @@
         .toast.show {
             opacity: 1;
         }
+
         .auth-buttons {
             position: absolute;
             right: 4%;
@@ -393,11 +394,12 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Spectacular Uzbek TODO</h1>
-        <div class="auth-buttons">
+<div class="container">
+    <h1>TODO</h1>
+    <div class="auth-buttons">
         {% if user.is_authenticated %}
-            <a href="#" onclick="document.getElementById('logout-form').submit();" id="logout-link" class="cart for-buy"><span>Logout</span></a>
+            <a href="#" onclick="document.getElementById('logout-form').submit();" id="logout-link"
+               class="cart for-buy"><span>Logout</span></a>
             <form id="logout-form" method="post" action="{% url 'logout' %}" style="display: none;">
                 {% csrf_token %}
             </form>
@@ -407,67 +409,117 @@
             </a>
         {% endif %}
     </div>
-        <form id="todo-form">
-            <input type="text" id="todo-input" placeholder="Add a new task..." required>
-            <button type="submit" id="add-todo">Add</button>
-        </form>
-        <ul id="todo-list">
-            {% for todo in object_list %}
+    <form id="todo-form">
+        <input type="text" id="todo-input" placeholder="Add a new task..." required>
+        <button type="submit" id="add-todo">Add</button>
+    </form>
+    <ul id="todo-list">
+        {% for todo in todos %}
             <li class="todo-item{% if todo.completed %} completed{% endif %}" draggable="true" data-id="{{ todo.id }}">
                 <input type="checkbox" {% if todo.completed %}checked{% endif %}>
                 <span>{{ todo.title }}</span>
                 <button class="delete-todo">Delete</button>
             </li>
-            {% endfor %}
-        </ul>
-        <div id="todo-filters">
-            <button class="filter-btn active" data-filter="all">All</button>
-            <button class="filter-btn" data-filter="active">Active</button>
-            <button class="filter-btn" data-filter="completed">Completed</button>
-            <button id="clear-completed">Clear Completed</button>
-        </div>
+        {% endfor %}
+    </ul>
+    <div id="todo-filters">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="active">Active</button>
+        <button class="filter-btn" data-filter="completed">Completed</button>
+        <button id="clear-completed">Clear Completed</button>
     </div>
-    <button id="dark-mode-toggle">🌓</button>
-    <div id="toast" class="toast"></div>
+</div>
+<button id="dark-mode-toggle">🌓</button>
+<div id="toast" class="toast"></div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const todoForm = document.getElementById('todo-form');
-            const todoInput = document.getElementById('todo-input');
-            const todoList = document.getElementById('todo-list');
-            const filterBtns = document.querySelectorAll('.filter-btn');
-            const clearCompletedBtn = document.getElementById('clear-completed');
-            const darkModeToggle = document.getElementById('dark-mode-toggle');
-            const toast = document.getElementById('toast');
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const anonymous = {% if user.is_authenticated %} false{% else %} true{% endif %};
+        const todoForm = document.getElementById('todo-form');
+        const todoInput = document.getElementById('todo-input');
+        const todoList = document.getElementById('todo-list');
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        const clearCompletedBtn = document.getElementById('clear-completed');
+        const darkModeToggle = document.getElementById('dark-mode-toggle');
+        const toast = document.getElementById('toast');
+        let draggedItem = null;
 
-            let draggedItem = null;
+        // Initialize existing todos
+        todoList.querySelectorAll('.todo-item').forEach(todoItem => {
+            todoItem.querySelector('input[type="checkbox"]').addEventListener('change', toggleTodo);
+            todoItem.querySelector('.delete-todo').addEventListener('click', deleteTodo);
+            todoItem.addEventListener('dragstart', dragStart);
+            todoItem.addEventListener('dragover', dragOver);
+            todoItem.addEventListener('drop', drop);
+            todoItem.addEventListener('dragend', dragEnd);
+        });
 
-            // Initialize existing todos
-            todoList.querySelectorAll('.todo-item').forEach(todoItem => {
-                todoItem.querySelector('input[type="checkbox"]').addEventListener('change', toggleTodo);
-                todoItem.querySelector('.delete-todo').addEventListener('click', deleteTodo);
-                todoItem.addEventListener('dragstart', dragStart);
-                todoItem.addEventListener('dragover', dragOver);
-                todoItem.addEventListener('drop', drop);
-                todoItem.addEventListener('dragend', dragEnd);
-            });
+        function applyDarkMode() {
+            const isDarkMode = localStorage.getItem('darkMode') === 'true';
+            document.body.classList.toggle('dark-mode', isDarkMode);
+        }
 
-            function applyDarkMode() {
-                const isDarkMode = localStorage.getItem('darkMode') === 'true';
-                document.body.classList.toggle('dark-mode', isDarkMode);
+        function CookieAddTodo(todo) {
+            const todos = JSON.parse(getCookie('todos') || '[]');
+            todos.push(todo);
+            setCookie('todos', JSON.stringify(todos), 7); // Cookies expire in 7 days
+        }
+
+        function CookieUpdateTodo(updatedTodo) {
+            const todos = JSON.parse(getCookie('todos') || '[]');
+            const updatedTodos = todos.map(todo => todo.id === updatedTodo.id ? updatedTodo : todo);
+            setCookie('todos', JSON.stringify(updatedTodos), 7);
+        }
+
+        function CookieRemoveTodo(todoId) {
+            const todos = JSON.parse(getCookie('todos') || '[]');
+            const filteredTodos = todos.filter(todo => todo.id !== todoId);
+            setCookie('todos', JSON.stringify(filteredTodos), 7);
+        }
+
+        function setCookie(name, value, days) {
+            const date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            const expires = "expires=" + date.toUTCString();
+            document.cookie = `${name}=${value};${expires};path=/`;
+        }
+
+
+        function getCookie(name) {
+            const nameEQ = name + "=";
+            const ca = document.cookie.split(';');
+            for (let i = 0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) === ' ') c = c.substring(1);
+                if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
             }
+            return null;
+        }
 
-            async function addTodo(e) {
-                e.preventDefault();
-                const title = todoInput.value.trim();
-                if (title) {
+
+        async function addTodo(e) {
+            e.preventDefault();
+            const title = todoInput.value.trim();
+            if (title) {
+                if (anonymous) {
+                    const uuid = crypto.randomUUID()
+                    CookieAddTodo({
+                        id: uuid,
+                        title: title,
+                        completed: false
+                    })
+                    const li = createTodoItem(title, uuid);
+                    todoList.appendChild(li);
+                    todoInput.value = '';
+                    showToast('Todo added successfully');
+                } else {
                     try {
-                        const response = await fetch('http://127.0.0.1:8000/todo/create/', {
+                        const response = await fetch('/todo/create/', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
                             },
-                            body: JSON.stringify({ title }),
+                            body: JSON.stringify({title}),
                         });
                         const data = await response.json();
                         if (data.status === 'success') {
@@ -475,52 +527,61 @@
                             todoList.appendChild(li);
                             todoInput.value = '';
                             showToast('Todo added successfully');
-                            window.location.reload();
                         } else {
                             showToast('Failed to add todo');
                         }
                     } catch (error) {
                         console.error('Error adding todo:', error);
-                        showToast('Error adding todo, Please register or log in to your account.');
+                        showToast('Error adding todo');
                     }
                 }
             }
+        }
 
-            function createTodoItem(text, id) {
-                const li = document.createElement('li');
-                li.className = 'todo-item';
-                li.draggable = true;
-                li.dataset.id = id;
-                li.innerHTML = `
+        function createTodoItem(text, id) {
+            const li = document.createElement('li');
+            li.className = 'todo-item';
+            li.draggable = true;
+            li.dataset.id = id;
+            li.innerHTML = `
                     <input type="checkbox">
                     <span>${text}</span>
                     <button class="delete-todo">Delete</button>
                 `;
-                li.querySelector('input').addEventListener('change', toggleTodo);
-                li.querySelector('.delete-todo').addEventListener('click', deleteTodo);
-                li.addEventListener('dragstart', dragStart);
-                li.addEventListener('dragover', dragOver);
-                li.addEventListener('drop', drop);
-                li.addEventListener('dragend', dragEnd);
-                return li;
-            }
+            li.querySelector('input').addEventListener('change', toggleTodo);
+            li.querySelector('.delete-todo').addEventListener('click', deleteTodo);
+            li.addEventListener('dragstart', dragStart);
+            li.addEventListener('dragover', dragOver);
+            li.addEventListener('drop', drop);
+            li.addEventListener('dragend', dragEnd);
+            return li;
+        }
 
-            async function toggleTodo(e) {
-                const todoItem = e.target.closest('.todo-item');
-                const id = todoItem.dataset.id;
+        async function toggleTodo(e) {
+            const todoItem = e.target.closest('.todo-item');
+            const id = todoItem.dataset.id;
+            if (anonymous) {
+                const title = todoItem.getElementsByTagName('span')[0].innerHTML;
+                CookieUpdateTodo({
+                    id: id,
+                    title: title,
+                    completed: !todoItem.classList.contains('completed')
+                });
+                todoItem.classList.toggle('completed');
+                showToast('Todo status updated');
+            } else {
                 try {
-                    const response = await fetch('http://127.0.0.1:8000/todo/confirm/', {
+                    const response = await fetch('/todo/confirm/', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                         },
-                        body: JSON.stringify({ id }),
+                        body: JSON.stringify({id}),
                     });
                     const data = await response.json();
                     if (data.status === 'success') {
                         todoItem.classList.toggle('completed');
                         showToast('Todo status updated');
-                        window.location.reload();
                     } else {
                         showToast('Failed to update todo status');
                         // Revert the checkbox state if the update failed
@@ -528,65 +589,76 @@
                     }
                 } catch (error) {
                     console.error('Error updating todo status:', error);
-                    showToast('Error updating todo status, Please register or log in to your account.');
+                    showToast('Error updating todo status');
                     // Revert the checkbox state if there was an error
                     e.target.checked = !e.target.checked;
                 }
             }
+        }
 
-            async function deleteTodo(e) {
-                const todoItem = e.target.closest('.todo-item');
-                const id = todoItem.dataset.id;
+        async function deleteTodo(e) {
+            const todoItem = e.target.closest('.todo-item');
+            const id = todoItem.dataset.id;
+            if (anonymous) {
+                CookieRemoveTodo(id);
+                todoItem.remove();
+                showToast('Todo deleted successfully');
+            } else {
                 try {
                     const response = await fetch('/todo/delete/', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                         },
-                        body: JSON.stringify({ id }),
+                        body: JSON.stringify({id}),
                     });
                     const data = await response.json();
                     if (data.status === 'success') {
                         todoItem.remove();
                         showToast('Todo deleted successfully');
-                        window.location.reload();
                     } else {
                         showToast('Failed to delete todo');
                     }
                 } catch (error) {
                     console.error('Error deleting todo:', error);
-                    showToast('Error deleting todo, Please register or log in to your account.');
+                    showToast('Error deleting todo');
                 }
             }
+        }
 
-            function filterTodos(filter) {
-                const todos = todoList.querySelectorAll('.todo-item');
-                todos.forEach(todo => {
-                    switch(filter) {
-                        case 'all':
-                            todo.style.display = '';
-                            break;
-                        case 'active':
-                            todo.style.display = todo.classList.contains('completed') ? 'none' : '';
-                            break;
-                        case 'completed':
-                            todo.style.display = todo.classList.contains('completed') ? '' : 'none';
-                            break;
-                    }
-                });
-            }
+        function filterTodos(filter) {
+            const todos = todoList.querySelectorAll('.todo-item');
+            todos.forEach(todo => {
+                switch (filter) {
+                    case 'all':
+                        todo.style.display = '';
+                        break;
+                    case 'active':
+                        todo.style.display = todo.classList.contains('completed') ? 'none' : '';
+                        break;
+                    case 'completed':
+                        todo.style.display = todo.classList.contains('completed') ? '' : 'none';
+                        break;
+                }
+            });
+        }
 
-            function clearCompleted() {
-                const completedTodos = todoList.querySelectorAll('.todo-item.completed');
-                completedTodos.forEach(async (todo) => {
-                    const id = todo.dataset.id;
+        function clearCompleted() {
+            const completedTodos = todoList.querySelectorAll('.todo-item.completed');
+            completedTodos.forEach(async (todo) => {
+                const id = todo.dataset.id;
+                if (anonymous) {
+                    CookieRemoveTodo(id);
+                    todo.remove();
+                    showToast('Todo deleted successfully');
+                } else {
                     try {
                         const response = await fetch('/todo/delete/', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
                             },
-                            body: JSON.stringify({ id }),
+                            body: JSON.stringify({id}),
                         });
                         const data = await response.json();
                         if (data.status === 'success') {
@@ -596,76 +668,77 @@
                         }
                     } catch (error) {
                         console.error('Error deleting completed todo:', error);
-                        showToast('Error deleting completed todo, Please register or log in to your account.');
+                        showToast('Error deleting completed todo');
                     }
-                });
-                showToast('Completed todos cleared');
-            }
-
-            function toggleDarkMode() {
-                document.body.classList.toggle('dark-mode');
-                localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
-            }
-
-            function dragStart(e) {
-                draggedItem = e.target;
-                setTimeout(() => e.target.style.display = 'none', 0);
-            }
-
-            function dragOver(e) {
-                e.preventDefault();
-                const afterElement = getDragAfterElement(todoList, e.clientY);
-                const currentElement = draggedItem;
-                if (afterElement == null) {
-                    todoList.appendChild(draggedItem);
-                } else {
-                    todoList.insertBefore(draggedItem, afterElement);
                 }
-            }
-
-            function getDragAfterElement(container, y) {
-                const draggableElements = [...container.querySelectorAll('.todo-item:not(.dragging)')];
-                return draggableElements.reduce((closest, child) => {
-                    const box = child.getBoundingClientRect();
-                    const offset = y - box.top - box.height / 2;
-                    if (offset < 0 && offset > closest.offset) {
-                        return { offset: offset, element: child };
-                    } else {
-                        return closest;
-                    }
-                }, { offset: Number.NEGATIVE_INFINITY }).element;
-            }
-
-            function drop(e) {
-                e.preventDefault();
-            }
-
-            function dragEnd() {
-                draggedItem.style.display = '';
-                draggedItem = null;
-            }
-
-            function showToast(message) {
-                toast.textContent = message;
-                toast.classList.add('show');
-                setTimeout(() => {
-                    toast.classList.remove('show');
-                }, 3000);
-            }
-
-            applyDarkMode();
-            todoForm.addEventListener('submit', addTodo);
-            filterBtns.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    filterBtns.forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    filterTodos(btn.dataset.filter);
-                });
             });
-            clearCompletedBtn.addEventListener('click', clearCompleted);
-            darkModeToggle.addEventListener('click', toggleDarkMode);
+            showToast('Completed todos cleared');
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+        }
+
+        function dragStart(e) {
+            draggedItem = e.target;
+            setTimeout(() => e.target.style.display = 'none', 0);
+        }
+
+        function dragOver(e) {
+            e.preventDefault();
+            const afterElement = getDragAfterElement(todoList, e.clientY);
+            const currentElement = draggedItem;
+            if (afterElement == null) {
+                todoList.appendChild(draggedItem);
+            } else {
+                todoList.insertBefore(draggedItem, afterElement);
+            }
+        }
+
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.todo-item:not(.dragging)')];
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) {
+                    return {offset: offset, element: child};
+                } else {
+                    return closest;
+                }
+            }, {offset: Number.NEGATIVE_INFINITY}).element;
+        }
+
+        function drop(e) {
+            e.preventDefault();
+        }
+
+        function dragEnd() {
+            draggedItem.style.display = '';
+            draggedItem = null;
+        }
+
+        function showToast(message) {
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        applyDarkMode();
+        todoForm.addEventListener('submit', addTodo);
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                filterBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                filterTodos(btn.dataset.filter);
+            });
         });
-    </script>
+        clearCompletedBtn.addEventListener('click', clearCompleted);
+        darkModeToggle.addEventListener('click', toggleDarkMode);
+    });
+</script>
 </body>
 </html>
 
